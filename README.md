@@ -1,10 +1,10 @@
 # aws-infra
 This repository contains code for setting up AWS networking resources such as Virtual Private Cloud (VPC), Internet Gateway, Route Table, and Routes. Terraform is used for infrastructure setup and tear down.
 
-Terraform AWS VPC Example
+# Terraform AWS VPC Example
 This repository contains Terraform code to provision an AWS Virtual Private Cloud (VPC), along with subnets, routing tables, and an Internet Gateway.
 
-Pre-requisites
+# Pre-requisites
 Before you can run this Terraform code, you will need to have the following tools installed on your machine:
 
 Terraform
@@ -17,7 +17,7 @@ To configure your AWS CLI, you can run the following command:
 
 This will prompt you for your AWS Access Key and Secret Key, as well as your default region and output format.
 
-Usage
+# Usage
 To use this Terraform code, follow these steps:
 
 1) Clone this repository to your local machine.
@@ -26,7 +26,7 @@ To use this Terraform code, follow these steps:
 4) If everything looks good, run terraform apply to apply the changes and provision your VPC resources.
 5) To destroy the resources when you're finished, run terraform destroy.
 
-Configuration
+# Configuration
 
 The variables.tf file in this repository defines the input variables that can be used to configure the VPC resources.
 
