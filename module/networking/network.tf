@@ -114,7 +114,7 @@ resource "aws_security_group" "app" {
 }
 
 resource "aws_instance" "my_instance" {
-  ami = "ami-0149ae1c2ccaf2fbc"
+  ami = var.ec2_ami
   instance_type = "t2.micro"
   subnet_id = aws_subnet.public[0].id
   vpc_security_group_ids = [aws_security_group.app.id]

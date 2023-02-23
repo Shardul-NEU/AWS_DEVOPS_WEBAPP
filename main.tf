@@ -7,6 +7,6 @@ module "my_network_0" {
   private_subnet_cidr_blocks = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
   availability_zones         = ["us-east-1a", "us-east-1b", "us-east-1c"]
   igw_name                   = "my-igw"
-  ec2_ami                    = "ami-0149ae1c2ccaf2fbc"
+  ec2_ami                    = "ami-04bc68446a7b7b810"
   app_port                   = 3000
 }
