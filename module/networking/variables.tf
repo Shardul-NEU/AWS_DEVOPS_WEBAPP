@@ -24,3 +24,13 @@ variable "availability_zones" {
 variable "igw_name" {
   description = "Name of the Internet Gateway"
 }
+
+variable "ec2_ami" {
+  description = "AMI ID for the EC2 instance"
+  type        = string
+}
+
+variable "app_port" {
+  description = "Port for the web application"
+  type        = number
+}
