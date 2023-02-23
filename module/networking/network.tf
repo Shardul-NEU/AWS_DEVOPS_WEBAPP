@@ -74,6 +74,29 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private.id
 }
 
+data "aws_ami" "example"{
+  most_recent = true
+  owners = ["892019607445"]
+
+  filter{
+    name = "name"
+    values = ["my-node-app-ami"]
+  }
+
+  filter{
+    name = "root-device-type"
+    values = ["ebs"]
+  }
+
+  filter{
+    name = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+output ec2_ami{
+  value = data.aws_ami.example.id
+}
+
 # Create security group for web application
 resource "aws_security_group" "app" {
   name_prefix = "app-"

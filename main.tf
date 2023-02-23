@@ -1,3 +1,23 @@
+data "aws_ami" "example"{
+  most_recent = true
+  owners = ["892019607445"]
+
+  filter{
+    name = "name"
+    values = ["my-node-app-ami"]
+  }
+
+  filter{
+    name = "root-device-type"
+    values = ["ebs"]
+  }
+
+  filter{
+    name = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
 module "my_network_0" {
   source = "./module/networking"
 
@@ -7,6 +27,6 @@ module "my_network_0" {
   private_subnet_cidr_blocks = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
   availability_zones         = ["us-east-1a", "us-east-1b", "us-east-1c"]
   igw_name                   = "my-igw"
-  ec2_ami                    = "ami-04bc68446a7b7b810"
+  ec2_ami                    = data.aws_ami.example.id
   app_port                   = 3000
 }
