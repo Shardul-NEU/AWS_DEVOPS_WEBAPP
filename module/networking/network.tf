@@ -125,6 +125,6 @@ resource "aws_instance" "my_instance" {
   }
   disable_api_termination = false
 }
-
+# code ends here
 
 
