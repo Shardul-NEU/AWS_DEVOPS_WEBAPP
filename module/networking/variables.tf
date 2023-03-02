@@ -1,28 +1,41 @@
-variable "vpc_cidr_block" {
-  description = "CIDR block for the VPC"
+variable "cidr_block" {
+  type = string
+}
+
+variable "instance_tenancy" {
+  type = string
+}
+
+variable "subnet_count" {
+  type = number
+}
+
+variable "bits" {
+  type = number
 }
 
 variable "vpc_name" {
-  description = "Name of the VPC"
+  type = string
 }
 
-variable "public_subnet_cidr_blocks" {
-  description = "CIDR blocks for the public subnets"
-  type        = list(string)
+variable "internet_gateway_name" {
+  type = string
 }
 
-variable "private_subnet_cidr_blocks" {
-  description = "CIDR blocks for the private subnets"
-  type        = list(string)
+variable "public_subnet_name" {
+  type = string
 }
 
-variable "availability_zones" {
-  description = "List of availability zones to use"
-  type        = list(string)
+variable "public_rt_name" {
+  type = string
 }
 
-variable "igw_name" {
-  description = "Name of the Internet Gateway"
+variable "private_subnet_name" {
+  type = string
+}
+
+variable "private_rt_name" {
+  type = string
 }
 
 variable "ec2_ami" {
@@ -34,3 +47,29 @@ variable "app_port" {
   description = "Port for the web application"
   type        = number
 }
+
+variable "username" {
+  type = string
+}
+variable "password" {
+  type = string
+}
+variable "db_name" {
+  type = string
+}
+
+variable "db_port" {
+  type = number
+}
+
+variable "identifier" {
+  default = "root"
+}
+
+variable "engine_version" {
+  default = "8.0"
+}
+variable "environment" {
+  type = string
+}
+

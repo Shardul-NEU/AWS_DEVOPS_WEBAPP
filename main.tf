@@ -1,19 +1,19 @@
-data "aws_ami" "example"{
+data "aws_ami" "example" {
   most_recent = true
-  owners = ["892019607445"]
+  owners      = ["892019607445"]
 
-  filter{
-    name = "name"
+  filter {
+    name   = "name"
     values = ["my-node-app-ami"]
   }
 
-  filter{
-    name = "root-device-type"
+  filter {
+    name   = "root-device-type"
     values = ["ebs"]
   }
 
-  filter{
-    name = "virtualization-type"
+  filter {
+    name   = "virtualization-type"
     values = ["hvm"]
   }
 }
@@ -21,12 +21,21 @@ data "aws_ami" "example"{
 module "my_network_0" {
   source = "./module/networking"
 
-  vpc_cidr_block             = "10.0.0.0/16"
-  vpc_name                   = "my-vpc"
-  public_subnet_cidr_blocks  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-  private_subnet_cidr_blocks = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
-  availability_zones         = ["us-east-1a", "us-east-1b", "us-east-1c"]
-  igw_name                   = "my-igw"
+  cidr_block            = var.vpc_cidr_block
+  instance_tenancy      = var.vpc_instance_tenancy
+  subnet_count          = var.subnet_count
+  bits                  = var.subnet_bits
+  vpc_name              = var.vpc_name
+  internet_gateway_name = var.vpc_internet_gateway_name
+  public_subnet_name    = var.vpc_public_subnet_name
+  public_rt_name        = var.vpc_public_rt_name
+  private_subnet_name   = var.vpc_private_subnet_name
+  private_rt_name       = var.vpc_private_rt_name
   ec2_ami                    = data.aws_ami.example.id
   app_port                   = 3000
+  db_port = 3306
+  username = "root"
+  password = "pass1234"
+  db_name = "webapp"
+  environment = "dev"
 }
