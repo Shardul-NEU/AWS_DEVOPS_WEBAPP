@@ -260,11 +260,11 @@ resource "random_uuid" "uuid" {
 }
 
 resource "aws_s3_bucket" "s3_bucket" {
-  bucket = "${random_uuid.uuid.result}-${var.environment}"
+  bucket = "my-image-bucket-shardul-web"
   force_destroy = true
 
   tags = {
-    Name        = "${random_uuid.uuid.result}"
+    Name        = "my-image-bucket-shardul-web"
   }
 }
 
@@ -341,5 +341,24 @@ resource "aws_db_instance" "rds_instance" {
 
 output "host_name" {
   value = aws_db_instance.rds_instance.address
+}
+
+
+// Route53 code
+data "aws_route53_zone" "selected" {
+  name         = var.zonename
+  private_zone = false
+}
+resource "aws_route53_record" "myrecord" {
+  zone_id = data.aws_route53_zone.selected.zone_id
+  name    = "${data.aws_route53_zone.selected.name}"
+  type    = "A"
+  ttl     = "60"
+
+  depends_on = [aws_instance.my_instance]
+
+  records = [
+    aws_instance.my_instance.public_ip,
+  ]
 }
 

@@ -38,5 +38,6 @@ module "my_network_0" {
   password = "pass1234"
   db_name = "webapp"
   environment = "dev"
+  zonename="dev.shardul-deshmukh.me"
 }
 

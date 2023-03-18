@@ -36,6 +36,7 @@ variable "private_subnet_name" {
 
 variable "private_rt_name" {
   type = string
+  default="myPrivateRT"
 }
 
 variable "ec2_ami" {
@@ -70,6 +71,10 @@ variable "engine_version" {
   default = "8.0"
 }
 variable "environment" {
+  type = string
+}
+
+variable "zonename" {
   type = string
 }
 
