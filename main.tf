@@ -31,11 +31,12 @@ module "my_network_0" {
   public_rt_name        = var.vpc_public_rt_name
   private_subnet_name   = var.vpc_private_subnet_name
   private_rt_name       = var.vpc_private_rt_name
-  ec2_ami                    = data.aws_ami.example.id
-  app_port                   = 3000
+  ec2_ami               = data.aws_ami.example.id
+  app_port              = 3000
   db_port = 3306
   username = "root"
   password = "pass1234"
   db_name = "webapp"
   environment = "dev"
+  zonename="dev.shardul-deshmukh.me"
 }
