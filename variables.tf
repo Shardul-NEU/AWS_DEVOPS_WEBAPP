@@ -1,39 +1,86 @@
-variable "vpc_cidr_block" {
-  default = "10.0.0.0/16"
-}
-
-variable "vpc_instance_tenancy" {
-  default = "default"
+ variable "cidr_block" {
+  type = string
 }
 
 variable "subnet_count" {
-  default = 3
+  type = number
 }
 
-variable "subnet_bits" {
-  default = 8
+variable "bits" {
+  type = number
 }
 
 variable "vpc_name" {
-  default = "vpc1"
+  type = string
 }
 
-variable "vpc_internet_gateway_name" {
-  default = "vpc1IG"
+variable "internet_gateway_name" {
+  type = string
 }
 
-variable "vpc_public_subnet_name" {
-  default = "vpc1PublicSubnet"
+variable "public_subnet_name" {
+  type = string
 }
 
-variable "vpc_public_rt_name" {
-  default = "vpc1PublicRT"
+variable "public_rt_name" {
+  type = string
 }
 
-variable "vpc_private_subnet_name" {
-  default = "vpc1PrivateSubnet"
+variable "private_subnet_name" {
+  type = string
 }
 
-variable "vpc_private_rt_name" {
-  default = "vpc1PrivateRT"
+variable "private_rt_name" {
+  type = string
+}
+
+variable "app_port" {
+  description = "Port that the application is running on"
+  type = number
+}
+
+variable "db_port" {
+  description = "Port that the database runs on"
+  type = number
+}
+
+variable "identifier" {
+  type = string
+  default = "root"
+}
+
+variable "engine_version" {
+  default = "8.0"
+}
+
+variable "username" {
+  description = "username of the database"
+  type = string
+  default = "root"
+}
+
+variable "password" {
+  description = "password of the database"
+  type = string
+}
+
+variable "db_name" {
+  description = "name of the database"
+  type = string
+  default = "webapp"
+}
+
+variable "zonename" {
+  description = "hosted zone name"
+  type = string
+}
+
+variable "environment" {
+  description = "env of aws"
+  type = string
+} 
+
+variable "region" {
+  type = string
+  default = "us-east-1"
 }
