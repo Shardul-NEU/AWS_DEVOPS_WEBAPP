@@ -175,10 +175,7 @@ resource "aws_iam_policy" "policy" {
         "Statement": [
             {
                 "Action": [
-                    "s3:GetObject",
-                    "s3:DeleteObject",
-                    "s3:PutObject",
-                    "s3:ListObject"                    
+                    "s3:*"                    
                 ],
                 "Effect": "Allow",
                 "Resource": [
