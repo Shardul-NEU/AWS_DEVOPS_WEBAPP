@@ -187,6 +187,8 @@ resource "aws_iam_policy" "policy" {
     })
 }
 
+
+
 resource "aws_iam_role" "iam_role" {
   name = "EC2-CSYE6225"
 
@@ -215,6 +217,12 @@ resource "aws_iam_policy_attachment" "policy-attachment" {
   name       = "policy-attachment"
   roles      = [aws_iam_role.iam_role.name]
   policy_arn = aws_iam_policy.policy.arn
+}
+
+resource "aws_iam_policy_attachment" "policy-attachment-cloudwatch" {
+  name       = "policy-attachment-cloudwatch"
+  roles      = [aws_iam_role.iam_role.name]
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
 
 resource "aws_iam_instance_profile" "ec2_profile" {
@@ -266,7 +274,13 @@ resource "aws_instance" "my_instance" {
 
     sudo systemctl daemon-reload
     sudo systemctl start webapp.service
-    sudo systemctl enable webapp.service    
+    sudo systemctl enable webapp.service
+
+    sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+    -a fetch-config \
+    -m ec2 \
+    -c file:/opt/cloudwatch-config.json \
+    -s  
 
   EOF
   subnet_id = aws_subnet.public-subnet.*.id[0]
