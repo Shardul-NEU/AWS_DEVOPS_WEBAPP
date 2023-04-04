@@ -263,7 +263,7 @@ resource "aws_instance" "my_instance" {
   }
    user_data = <<EOF
     #!/bin/bash
-    cd /home/ec2-user/webapp
+    cd /home/ec2-user/WebApp/webapp
     echo DBHOST="${aws_db_instance.rds_instance.address}" > .env
     echo DBUSER="${var.username}" >> .env
     echo DBPASS="${var.password}" >> .env
