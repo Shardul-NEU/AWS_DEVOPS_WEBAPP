@@ -92,29 +92,58 @@ resource "aws_route_table_association" "private-subnet-route-table-association" 
 
 data "aws_availability_zones" "available" {}
 
+# security group for load balancer
+
+resource "aws_security_group" "load_balancer_sg" {
+  name_prefix = "load_balancer_security_group"
+  vpc_id = aws_vpc.vpc.id
+
+  ingress {
+    from_port = 80
+    to_port = 80
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  ingress {
+    from_port = 443
+    to_port = 443
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 # Create security group for web application
 resource "aws_security_group" "app" {
   name_prefix = "app-"
   vpc_id = aws_vpc.vpc.id
-  ingress {
-    description = "HTTPS ingress"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    description = "HTTP ingress"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  # ingress {
+  #   description = "HTTPS ingress"
+  #   from_port   = 443
+  #   to_port     = 443
+  #   protocol    = "tcp"
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
+  # ingress {
+  #   description = "HTTP ingress"
+  #   from_port   = 80
+  #   to_port     = 80
+  #   protocol    = "tcp"
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
   ingress {
     description = "SSH ingress"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
+    # security_groups = [aws_security_group.load_balancer_sg.id]
     cidr_blocks = ["0.0.0.0/0"]
   }
   ingress {
@@ -122,9 +151,10 @@ resource "aws_security_group" "app" {
     from_port   = var.app_port
     to_port     = var.app_port
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    security_groups = [aws_security_group.load_balancer_sg.id]
+    # cidr_blocks = ["0.0.0.0/0"]
   }
-
+  
   egress {
     from_port   = 0
     to_port     = 0
@@ -250,18 +280,10 @@ data "aws_ami" "example" {
   }
 }
 
-// instance setup
-resource "aws_instance" "my_instance" {
-  ami = data.aws_ami.example.id
-  instance_type = "t2.micro"
-  vpc_security_group_ids = [aws_security_group.app.id]
-  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
-  ebs_block_device {
-    device_name = "/dev/xvda"
-    volume_size = 50
-    volume_type = "gp2"
-  }
-   user_data = <<EOF
+# Define the launch configuration
+
+data "template_file" "userData" {
+  template = <<EOF
     #!/bin/bash
     cd /home/ec2-user/WebApp/webapp
     echo DBHOST="${aws_db_instance.rds_instance.address}" > .env
@@ -282,9 +304,202 @@ resource "aws_instance" "my_instance" {
     -c file:/opt/cloudwatch-config.json \
     -s  
 
-  EOF
-  subnet_id = aws_subnet.public-subnet.*.id[0]
+    EOF
 }
+
+resource "aws_launch_template" "app_server" {
+  # depends_on = [var.sec_group_application
+  # ]
+  image_id             = data.aws_ami.example.id
+  instance_type = "t2.micro"
+  key_name = "CLI_Access"
+  # iam_instance_profile = var.ec2_profile_name
+  iam_instance_profile {
+    name = aws_iam_instance_profile.ec2_profile.name
+  }
+
+  # vpc_security_group_ids = [aws_security_group.application.id]
+  network_interfaces {
+    associate_public_ip_address = true
+    security_groups             = [aws_security_group.app.id]
+  }
+  tags = {
+    Name = "EC2-${data.aws_ami.example.id}"
+  }
+  # disable_api_termination = true
+
+  # root_block_device {
+  #   volume_size = var.volume_size
+  #   volume_type = var.volume_type
+  # }
+  block_device_mappings {
+    device_name = "/dev/xvda"
+    ebs {
+      volume_size = 8
+      volume_type = "gp2"
+    }
+  }
+  user_data = base64encode(data.template_file.userData.rendered)
+  
+  # subnet_id = var.subnet_ids[0]
+}
+
+// AWS autoscaling group defined
+
+resource "aws_autoscaling_group" "my_autoscaling_group" {
+  name = "my_autoscaling_group"
+  default_cooldown    = 60
+  min_size            = 1
+  max_size            = 3
+  desired_capacity    = 1
+  launch_template {
+    id      = aws_launch_template.app_server.id
+    version = "$Latest"
+  }
+  vpc_zone_identifier = aws_subnet.public-subnet[*].id
+  health_check_type = "EC2"
+  tag {
+    key                 = "webapp"
+    value               = "webappInstance"
+    propagate_at_launch = true
+  }
+  target_group_arns = [aws_lb_target_group.web.arn]  
+  health_check_grace_period = 300
+  # termination_policies = ["OldestInstance"]
+}
+
+// auto scaling up-down policy
+
+resource "aws_cloudwatch_metric_alarm" "scaleUpAlarm" {
+  alarm_name          = "ASG_Scale_Up"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 5
+
+  dimensions = {
+    AutoScalingGroupName = aws_autoscaling_group.my_autoscaling_group.name
+  }
+
+  alarm_description = "Scale up if CPU > 5% for 1 minute"
+  alarm_actions     = [aws_autoscaling_policy.scale_up_policy.arn]
+}
+
+resource "aws_cloudwatch_metric_alarm" "scaleDownAlarm" {
+  alarm_name          = "ASG_Scale_Down"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 3
+
+  dimensions = {
+    AutoScalingGroupName = aws_autoscaling_group.my_autoscaling_group.name
+  }
+
+  alarm_description = "Scale down if CPU < 3% for 2 minutes"
+  alarm_actions     = [aws_autoscaling_policy.scale_down_policy.arn]
+}
+
+resource "aws_autoscaling_policy" "scale_up_policy" {
+  name = "scale_up_policy"
+  policy_type = "SimpleScaling"
+  scaling_adjustment = 1
+  adjustment_type  = "ChangeInCapacity" 
+  cooldown = 60 # cooldown in seconds
+  autoscaling_group_name = aws_autoscaling_group.my_autoscaling_group.name
+  metric_aggregation_type = "Average"
+  # alarm_name = aws_cloudwatch_metric_alarm.cpu_utilization_alarm.name
+}
+
+resource "aws_autoscaling_policy" "scale_down_policy" {
+  name = "scale_down_policy"
+  policy_type = "SimpleScaling"
+  scaling_adjustment = -1 
+  adjustment_type = "ChangeInCapacity"
+  cooldown = 60 # cooldown in seconds
+  autoscaling_group_name = aws_autoscaling_group.my_autoscaling_group.name
+  metric_aggregation_type = "Average"
+  # alarm_name = aws_cloudwatch_metric_alarm.cpu_utilization_alarm.name
+}
+
+
+// Load Balancer Defined
+resource "aws_lb" "web" {
+  name = "web-lb"
+  internal = false
+  load_balancer_type = "application"
+  security_groups = [aws_security_group.load_balancer_sg.id]
+  # subnets = var.subnet_ids
+  subnets = aws_subnet.public-subnet[*].id
+}
+
+resource "aws_lb_target_group" "web" {
+  name = "web-tg"
+  port = 3000
+  protocol = "HTTP"
+  
+  #cross-check below line
+  vpc_id = aws_vpc.vpc.id
+}
+
+resource "aws_lb_listener" "web" {
+  load_balancer_arn = aws_lb.web.arn
+  port = 80
+  protocol = "HTTP"
+
+  default_action {
+    type = "forward"
+    target_group_arn = aws_lb_target_group.web.arn
+  }
+}
+
+# resource "aws_lb_target_group_attachment" "webapp_tg_at" {
+#   target_group_arn = aws_lb_target_group.webapp_tg.arn
+#   target_id        = aws_autoscaling_group.asg.name
+#   port             = 3000
+# }
+
+// instance setup
+# resource "aws_instance" "my_instance" {
+#   ami = data.aws_ami.example.id
+#   instance_type = "t2.micro"
+#   vpc_security_group_ids = [aws_security_group.app.id]
+#   iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
+#   ebs_block_device {
+#     device_name = "/dev/xvda"
+#     volume_size = 50
+#     volume_type = "gp2"
+#   }
+#    user_data = <<EOF
+#     #!/bin/bash
+#     cd /home/ec2-user/WebApp/webapp
+#     echo DBHOST="${aws_db_instance.rds_instance.address}" > .env
+#     echo DBUSER="${var.username}" >> .env
+#     echo DBPASS="${var.password}" >> .env
+#     echo DATABASE="${var.db_name}" >> .env
+#     echo PORT=${var.app_port} >> .env
+#     echo DBPORT=${var.db_port} >> .env
+#     echo BUCKETNAME=${aws_s3_bucket.s3_bucket.id} >> .env
+
+#     sudo systemctl daemon-reload
+#     sudo systemctl start webapp.service
+#     sudo systemctl enable webapp.service
+
+#     sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+#     -a fetch-config \
+#     -m ec2 \
+#     -c file:/opt/cloudwatch-config.json \
+#     -s  
+
+#   EOF
+#   subnet_id = aws_subnet.public-subnet.*.id[0]
+# }
 
 // S3 bucket creation
 resource "random_uuid" "uuid" {
@@ -380,15 +595,27 @@ data "aws_route53_zone" "selected" {
   name         = var.zonename
   private_zone = false
 }
-resource "aws_route53_record" "myrecord" {
+
+# resource "aws_route53_record" "myrecord" {
+#   zone_id = data.aws_route53_zone.selected.zone_id
+#   name    = "${data.aws_route53_zone.selected.name}"
+#   type    = "A"
+#   ttl     = "60"
+
+#   depends_on = [aws_instance.my_instance]
+
+#   records = [
+#     aws_instance.my_instance.public_ip,
+#   ]
+# }
+
+resource "aws_route53_record" "webapp_dns" {
   zone_id = data.aws_route53_zone.selected.zone_id
   name    = "${data.aws_route53_zone.selected.name}"
   type    = "A"
-  ttl     = "60"
-
-  depends_on = [aws_instance.my_instance]
-
-  records = [
-    aws_instance.my_instance.public_ip,
-  ]
+  alias {
+    name                   = aws_lb.web.dns_name
+    zone_id                = aws_lb.web.zone_id
+    evaluate_target_health = true
+  }
 }
