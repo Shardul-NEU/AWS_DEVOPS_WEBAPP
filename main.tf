@@ -307,41 +307,57 @@ data "template_file" "userData" {
     EOF
 }
 
-resource "aws_launch_template" "app_server" {
-  # depends_on = [var.sec_group_application
-  # ]
-  image_id             = data.aws_ami.example.id
-  instance_type = "t2.micro"
-  key_name = "CLI_Access"
-  # iam_instance_profile = var.ec2_profile_name
-  iam_instance_profile {
-    name = aws_iam_instance_profile.ec2_profile.name
-  }
+resource "aws_kms_key" "ebs_encryption_key" {
+  description              = "EBS encryption key"
+  deletion_window_in_days  = 10
+  # customer_master_key_spec = "SYMMETRIC_DEFAULT"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid = "Enable IAM User permissions"
+        Effect = "Allow"
+        Principal = {AWS = "*"}
+        Action = "kms:*"
+        Resource = "*"
+      }
+    ]
+  })
+}
 
-  # vpc_security_group_ids = [aws_security_group.application.id]
-  network_interfaces {
-    associate_public_ip_address = true
-    security_groups             = [aws_security_group.app.id]
-  }
-  tags = {
-    Name = "EC2-${data.aws_ami.example.id}"
-  }
-  # disable_api_termination = true
+locals {
+  aws_account_id = "273198842666"
+}
 
-  # root_block_device {
-  #   volume_size = var.volume_size
-  #   volume_type = var.volume_type
-  # }
-  block_device_mappings {
-    device_name = "/dev/xvda"
-    ebs {
-      volume_size = 8
-      volume_type = "gp2"
-    }
-  }
-  user_data = base64encode(data.template_file.userData.rendered)
-  
-  # subnet_id = var.subnet_ids[0]
+resource "aws_kms_key" "rds_encryption_key" {
+  description              = "RDS encryption key"
+  deletion_window_in_days  = 10
+  # customer_master_key_spec = "SYMMETRIC_DEFAULT"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid = "Enable IAM User permissions"
+        Effect = "Allow"
+        Principal = {AWS = "*"}
+        Action = "kms:*"
+        Resource = "*"
+      },
+      {
+        Sid = "Allow usage of the key for RDS"
+        Effect = "Allow"
+        Principal = { AWS = ["arn:aws:iam::${local.aws_account_id}:root"]}
+        Action = [
+          "kms:Encrpyt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:generateDataKey*",
+          "kms:DescribeKey"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
 }
 
 // AWS autoscaling group defined
@@ -448,10 +464,19 @@ resource "aws_lb_target_group" "web" {
   vpc_id = aws_vpc.vpc.id
 }
 
+data "aws_acm_certificate" "issued" {
+  domain   = "${var.zonename}"
+  statuses = ["ISSUED"]
+}
+
+
 resource "aws_lb_listener" "web" {
   load_balancer_arn = aws_lb.web.arn
-  port = 80
-  protocol = "HTTP"
+  port = 443
+  protocol = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  # certificate_arn   = "arn:aws:acm:us-east-1:273198842666:certificate/10891b2b-e7e9-4c1a-b117-78d982537bc3"
+  certificate_arn = data.aws_acm_certificate.issued.arn
 
   default_action {
     type = "forward"
@@ -580,6 +605,8 @@ resource "aws_db_instance" "rds_instance" {
   multi_az=false
   db_subnet_group_name = "${aws_db_subnet_group.subnet_group.name}"
   vpc_security_group_ids = [aws_security_group.database.id]
+  storage_encrypted      = true
+  kms_key_id             = aws_kms_key.rds_encryption_key.arn
 
   //Set it to false.
   publicly_accessible = false
@@ -589,25 +616,45 @@ output "host_name" {
   value = aws_db_instance.rds_instance.address
 }
 
+resource "aws_launch_template" "app_server" {
+  name = "app_server"
+  image_id  = data.aws_ami.example.id
+  instance_type = "t2.micro"
+  key_name = "CLI_Access"
+
+  iam_instance_profile {
+    name = aws_iam_instance_profile.ec2_profile.name
+  }
+
+  network_interfaces {
+    associate_public_ip_address = true
+    security_groups             = [aws_security_group.app.id]
+  }
+  tags = {
+    Name = "EC2-${data.aws_ami.example.id}"
+  }
+
+##########ASSG 8
+  block_device_mappings {
+    device_name = "/dev/xvda"
+    ebs {
+    
+      volume_size = 8
+      volume_type = "gp2"
+      encrypted             = true
+      kms_key_id            = aws_kms_key.ebs_encryption_key.arn
+    }
+  }
+  
+  user_data = base64encode(data.template_file.userData.rendered) 
+}
+
 
 // Route53 code
 data "aws_route53_zone" "selected" {
   name         = var.zonename
   private_zone = false
 }
-
-# resource "aws_route53_record" "myrecord" {
-#   zone_id = data.aws_route53_zone.selected.zone_id
-#   name    = "${data.aws_route53_zone.selected.name}"
-#   type    = "A"
-#   ttl     = "60"
-
-#   depends_on = [aws_instance.my_instance]
-
-#   records = [
-#     aws_instance.my_instance.public_ip,
-#   ]
-# }
 
 resource "aws_route53_record" "webapp_dns" {
   zone_id = data.aws_route53_zone.selected.zone_id
