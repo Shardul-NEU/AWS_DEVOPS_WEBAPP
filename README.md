@@ -32,31 +32,31 @@ To set the values for these variables, you can either modify the default values 
 
 # Infrastructre provisioned using this terraform code
 
-- **VPC**: The code creates an AWS Virtual Private Cloud (VPC) with a specified CIDR block, instance tenancy, and DNS hostname configuration.
+- **VPC**: The code creates an AWS Virtual Private Cloud (VPC) with a specified `CIDR block`, `instance tenancy`, and `DNS hostname configuration`.
 
 - **Internet Gateway**: An internet gateway is created and associated with the VPC to enable internet access for resources within the VPC.
 
-- **Public Subnet**: Public subnets are created within the VPC. Each subnet has a unique CIDR block, availability zone, and is associated with the internet gateway. These subnets are used for resources that need to be publicly accessible.
+- **Public Subnet**: Public subnets are created within the VPC. Each subnet has a unique `CIDR block`, `availability zone`, and is associated with the `internet gateway`. These subnets are used for resources that need to be publicly accessible.
 
-- **Public Route Table**: A route table is created and associated with the VPC. It contains a default route that directs all traffic (0.0.0.0/0) to the internet gateway.
+- **Public Route Table**: A route table is created and associated with the VPC. It contains a `default route` that directs all traffic (0.0.0.0/0) to the `internet gateway`.
 
-- **Route Table Association**: The public subnets are associated with the public route table to enable routing of traffic.
+- **Route Table Association**: The public subnets are associated with the `public route table` to enable routing of traffic.
 
-- **Private Subnet**: Private subnets are created within the VPC. Similar to public subnets, they have unique CIDR blocks and availability zones. However, they are not associated with the internet gateway, making resources in these subnets private.
+- **Private Subnet**: Private subnets are created within the VPC. Similar to `public subnets`, they have unique `CIDR blocks` and `availability zones`. However, they are not associated with the `internet gateway`, making resources in these subnets private.
 
-- **Private Route Table**: A route table is created for the private subnets, but it doesn't contain any routes by default.
+- **Private Route Table**: A route table is created for the `private subnets`, but it doesn't contain any routes by default.
 
-- **Security Groups**: Several security groups are defined for different purposes, such as load balancer security group, application security group, and database security group. Ingress and egress rules are specified to control traffic access.
+- **Security Groups**: Several security groups are defined for different purposes, such as `load balancer security group`, `application security group`, and `database security group`. `Ingress` and `egress` rules are specified to control traffic access.
 
-- **IAM Role**: An IAM role is created with an associated IAM policy that allows S3 access. This role is intended for EC2 instances.
+- **IAM Role**: An IAM role is created with an associated `IAM policy` that allows S3 access. This role is intended for `EC2 instances`.
 
-- **Launch Configuration**: A launch configuration is defined with user data that sets up the environment for EC2 instances. It includes commands to configure environment variables and start services.
+- **Launch Configuration**: A launch configuration is defined with `user data` that sets up the environment for `EC2 instances`. It includes commands to configure environment variables and start services.
 
-- **Auto Scaling Group**: An auto scaling group is created, which uses the defined launch configuration and automatically adjusts the number of EC2 instances based on defined scaling policies.
+- **Auto Scaling Group**: An auto scaling group is created, which uses the defined `launch configuration` and automatically adjusts the number of EC2 instances based on defined `scaling policies`.
 
-- **CloudWatch Alarms**: CloudWatch alarms are created to monitor CPU utilization of the auto scaling group instances. Scaling policies are associated with these alarms to trigger scaling actions.
+- **CloudWatch Alarms**: CloudWatch `alarms` are created to monitor CPU utilization of the `auto scaling group` instances. Scaling `policies` are associated with these alarms to trigger scaling `actions`.
 
-- **Load Balancer**: An application load balancer (ALB) is created with a target group and listener. The ALB is associated with the public subnets and the security group.
+- **Load Balancer**: An application load balancer (ALB) is created with a `target group` and `listener`. The ALB is associated with the `public subnets` and the `security group`.
 
 - **ACM Certificate**: An ACM certificate is retrieved based on the provided domain name.
 
@@ -70,7 +70,7 @@ The `aws_s3_bucket_lifecycle_configuration` resource configures a lifecycle rule
 
 The `aws_s3_bucket_server_side_encryption_configuration` resource configures server-side encryption for the S3 bucket, applying AES256 encryption by default.
 
-## AWS RDS Database
+- **AWS RDS Database**:
 
 The `aws_db_parameter_group` resource creates a parameter group for an RDS database specific to the MySQL 8.0 engine.
 
@@ -78,11 +78,11 @@ The `aws_db_subnet_group` resource creates a subnet group for the RDS database, 
 
 The `aws_db_instance` resource creates an RDS database instance, specifying parameters such as storage, engine, instance class, credentials, security groups, and encryption settings. The `publicly_accessible` parameter is set to false, ensuring that the database is not accessible from the public internet.
 
-## AWS EC2 Launch Template
+- **AWS EC2 Launch Template**:
 
 The `aws_launch_template` resource defines a launch template for an EC2 instance. It specifies the instance type, image, key pair, network configuration, and tags. Additionally, it includes a block device mapping for an encrypted EBS volume.
 
-## AWS Route 53 DNS
+- **AWS Route 53 DNS**:
 
 The `data "aws_route53_zone"` data source retrieves information about a Route 53 hosted zone with the specified name and private_zone parameter.
 
