@@ -265,11 +265,6 @@ data "aws_ami" "example" {
   owners      = ["892019607445"]
 
   filter {
-    name   = "name"
-    values = ["my-node-app-ami"]
-  }
-
-  filter {
     name   = "root-device-type"
     values = ["ebs"]
   }
