@@ -32,6 +32,7 @@ The variables.tf and terraform.tfvars file in this repository defines the input 
 To set the values for these variables, you can either modify the default values in the variables.tf file or terraform.tfvars file with your own values.
 
 
+
 # Infrastructre provisioned using this terraform code
 
 - **VPC**: The code creates an AWS Virtual Private Cloud (VPC) with a specified `CIDR block`, `instance tenancy`, and `DNS hostname configuration`.
