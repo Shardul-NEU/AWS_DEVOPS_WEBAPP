@@ -62,31 +62,13 @@ To set the values for these variables, you can either modify the default values 
 
 - **AWS Load Balancer Listener**: The `aws_lb_listener` resource configures a listener for an Application Load Balancer. It listens on port 443 (HTTPS) and forwards requests to a target group. It also specifies an SSL policy and a certificate for handling HTTPS traffic.
 
-- **AWS S3 Bucket**: Creates an S3 bucket named "my-image-bucket-shardul-web" with the specified tags. The `force_destroy` parameter ensures that the bucket can be destroyed even if it contains objects.
+- **AWS S3 Bucket**: Creates an S3 bucket named "my-image-bucket-shardul-web" with the specified tags. The `force_destroy` parameter ensures that the bucket can be destroyed even if it contains objects. `aws_s3_bucket_acl` resource sets the access control list (ACL) for the S3 bucket to "private", ensuring that only the bucket owner has access. `aws_s3_bucket_lifecycle_configuration` resource configures a lifecycle rule for the S3 bucket. In this case, it enables logging and specifies that objects should be transitioned to the STANDARD_IA storage class after 30 days. `aws_s3_bucket_server_side_encryption_configuration` resource configures server-side encryption for the S3 bucket, applying AES256 encryption by default.
 
-The `aws_s3_bucket_acl` resource sets the access control list (ACL) for the S3 bucket to "private", ensuring that only the bucket owner has access.
+- **AWS RDS Database**: `aws_db_parameter_group` resource creates a parameter group for an RDS database specific to the MySQL 8.0 engine. `aws_db_subnet_group` resource creates a subnet group for the RDS database, specifying the subnet IDs where the database can be launched. `aws_db_instance` resource creates an RDS database instance, specifying parameters such as storage, engine, instance class, credentials, security groups, and encryption settings. The `publicly_accessible` parameter is set to false, ensuring that the database is not accessible from the public internet.
 
-The `aws_s3_bucket_lifecycle_configuration` resource configures a lifecycle rule for the S3 bucket. In this case, it enables logging and specifies that objects should be transitioned to the STANDARD_IA storage class after 30 days.
+- **AWS EC2 Launch Template**: `aws_launch_template` resource defines a launch template for an EC2 instance. It specifies the instance type, image, key pair, network configuration, and tags. Additionally, it includes a block device mapping for an encrypted EBS volume.
 
-The `aws_s3_bucket_server_side_encryption_configuration` resource configures server-side encryption for the S3 bucket, applying AES256 encryption by default.
-
-- **AWS RDS Database**:
-
-The `aws_db_parameter_group` resource creates a parameter group for an RDS database specific to the MySQL 8.0 engine.
-
-The `aws_db_subnet_group` resource creates a subnet group for the RDS database, specifying the subnet IDs where the database can be launched.
-
-The `aws_db_instance` resource creates an RDS database instance, specifying parameters such as storage, engine, instance class, credentials, security groups, and encryption settings. The `publicly_accessible` parameter is set to false, ensuring that the database is not accessible from the public internet.
-
-- **AWS EC2 Launch Template**:
-
-The `aws_launch_template` resource defines a launch template for an EC2 instance. It specifies the instance type, image, key pair, network configuration, and tags. Additionally, it includes a block device mapping for an encrypted EBS volume.
-
-- **AWS Route 53 DNS**:
-
-The `data "aws_route53_zone"` data source retrieves information about a Route 53 hosted zone with the specified name and private_zone parameter.
-
-The `aws_route53_record` resource creates a Route 53 DNS record, associating the DNS record with the Application Load Balancer's DNS name using an alias.
+- **AWS Route 53 DNS**: `data "aws_route53_zone"` data source retrieves information about a Route 53 hosted zone with the specified name and private_zone parameter. `aws_route53_record` resource creates a Route 53 DNS record, associating the DNS record with the Application Load Balancer's DNS name using an alias.
 
 
 
