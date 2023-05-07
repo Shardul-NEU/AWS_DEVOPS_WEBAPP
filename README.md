@@ -1,6 +1,8 @@
 # AWS-infra
 This repository contains code for setting up AWS infrastructure resources for hosting a cloud native web application. Terraform is used for infrastructure setup and tear down.
 
+This repository is used in combination with the **WebApp_Shardul** repository containing code of the web application, CI/CD and AMI setup using Packer that is available in the same Github profile. 
+
 # Pre-requisites
 Before you can run this Terraform code, you will need to have the following tools installed on your machine:
 
