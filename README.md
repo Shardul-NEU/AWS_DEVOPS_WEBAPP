@@ -1,3 +1,5 @@
+This repository contains code for setting up AWS infrastructure and the Webapp that was developed to imitate the whole devops workflow. Webapp code and more about packer, AMI's and cloud watch configuration can be found in the WebApp_Packer_code folder. 
+
 # AWS-infra
 This repository contains code for setting up AWS infrastructure resources for hosting a cloud native web application. Terraform is used for infrastructure setup and tear down.
 
