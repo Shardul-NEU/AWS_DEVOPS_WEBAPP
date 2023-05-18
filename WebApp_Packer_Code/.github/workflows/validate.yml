@@ -1,0 +1,17 @@
+name: Validate Packer
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Packer Init
+        run: packer init .
+
+      - name: Packer Validate
+        run: packer validate -syntax-only myapp.pkr.hcl

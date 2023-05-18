@@ -1,0 +1,64 @@
+name: Validate and Build AMI
+
+on:
+  pull_request:
+   types: [closed]
+  workflow_dispatch:
+
+jobs:
+  validate-ami:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Validate AMI template
+        uses: hashicorp/packer-github-actions@v2.6.2
+        with:
+          command: validate
+          template: ./myapp.pkr.hcl
+
+  build-ami:
+    needs: validate-ami
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Packer Init
+        run: packer init .
+
+      - name: Build AMI
+        uses: hashicorp/packer-github-actions@v2.6.2
+        with:
+        command: build
+        template: ./myapp.pkr.hcl
+        vars_file: ./variables.json
+        vars: |
+          ami_account_id = ${secrets.AMI_ACCOUNT_ID}
+        secrets: |
+          aws_access_key = ${{ secrets.aws_access_key }}
+          aws_secret_key = ${{ secrets.aws_secret_key }}
+
+      - name: Set AWS Demo credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEMO }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEMO }}
+            aws-region: us-east-1
+
+      - name: Copying ami Artifacts and Launching Template
+        run: |
+          AMI_ID=$(jq -r '.builds[-1].artifact_id' manifest.json | cut -d ":" -f2)
+          echo $AMI_ID
+          LT_ID=$(aws ec2 describe-launch-templates --launch-template-name app_server | jq '.LaunchTemplates[].LaunchTemplateId')
+          LT_ID="${LT_ID%\"}"
+          LT_ID="${LT_ID#\"}"
+          echo $LT_ID
+          aws ec2 create-launch-template-version --launch-template-id $LT_ID --version-description WebVersion2 --source-version 1 --launch-template-data "ImageId=$AMI_ID"
+          aws autoscaling update-auto-scaling-group --auto-scaling-group-name my_autoscaling_group --launch-template LaunchTemplateId=$LT_ID,Version='$Latest'
+      - name: Refreshing Instances
+        run: aws autoscaling start-instance-refresh --auto-scaling-group-name my_autoscaling_group

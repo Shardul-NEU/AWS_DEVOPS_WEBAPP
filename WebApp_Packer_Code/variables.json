@@ -1,0 +1,11 @@
+
+{
+    "aws_access_key": "AKIA47MEDA6KTOM5FU5D",
+    "aws_secret_key": "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",
+    "aws_region": "us-east-1",
+    "vpc_id": "vpc-0fee9139a03822322",
+    "subnet_id": "subnet-03f1a8b1975d560e8",
+    "instance_type": "t2.micro",
+    "ami_name": "my-node-app-ami",
+    "ami_users": ["418151176571"]
+}
