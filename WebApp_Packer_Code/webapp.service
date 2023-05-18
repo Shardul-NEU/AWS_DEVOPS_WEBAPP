@@ -1,0 +1,12 @@
+[Unit]
+Description= Webapp
+After=network.target
+
+[Service]
+EnvironmentFile=/home/ec2-user/WebApp/webapp/.env
+ExecStart=/usr/bin/node /home/ec2-user/WebApp/webapp/index.js
+Restart=always
+User=ec2-user
+
+[Install]
+WantedBy=multi-user.target
